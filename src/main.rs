@@ -63,10 +63,11 @@ fn main() {
             .collect::<Vec<_>>();
 
         let command = &commands[0] as &str;
+        let arg_one = commands.get(1).cloned().unwrap_or("");
 
         match command {
             "pwd" => println!("{}", curr_dir.display()),
-            "cd" => commands::change_dir::change_dir(&commands[1] as &str),
+            "cd" => commands::change_dir::change_dir(arg_one),
             "touch" => touch(&Path::new(&commands[1] as &str))
                 .unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
@@ -84,7 +85,7 @@ fn main() {
                 println!("! {:?}", why.kind());
             }),
             "help" => println!("Sorry, you're on your own for now"),
-            _ => bin_command(command, &commands[1] as &str)
+            _ => bin_command(command, arg_one)
             // _ => println!("Rsh: {} <- command not found", command)
         }
     }
