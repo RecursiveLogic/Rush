@@ -1,6 +1,6 @@
 #![allow(unused_must_use)]
 #![allow(unused_imports)]
-// mod commands;
+mod commands;
 
 use std::fs::{self, File, OpenOptions};
 use std::io;
@@ -41,7 +41,6 @@ fn main() {
     let mut stdout = stdout.lock();
     let mut buffer = String::new();
     let empty_dir = OsString::new();
-    // let root = Path::new(env::var("HOME"));
 
     println!("** Rsh **\n");
 
@@ -67,6 +66,7 @@ fn main() {
 
         match command {
             "pwd" => println!("{}", curr_dir.display()),
+            "cd" => commands::change_dir::change_dir(&commands[1] as &str),
             "touch" => touch(&Path::new(&commands[1] as &str))
                 .unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
