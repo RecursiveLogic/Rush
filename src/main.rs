@@ -1,6 +1,7 @@
 #![allow(unused_must_use)]
 #![allow(unused_imports)]
 mod commands;
+mod utils;
 
 use std::fs::{self, File, OpenOptions};
 use std::io;
@@ -21,8 +22,8 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
-fn bin_command(s: &str, argmnt: &str) {
-    let mut child = Command::new(["/bin/", s].join(""))
+fn bin_command(cmd: &str, argmnt: &str) {
+    let mut child = Command::new(["/bin/", cmd].join(""))
         .arg(argmnt)
         .spawn()
         .expect("Failed to execute child");
@@ -47,8 +48,9 @@ fn main() {
     loop {
         let curr_dir = env::current_dir().unwrap();
         let last_dir = curr_dir.iter().last().unwrap_or(&empty_dir);
+        let output = ["Rush:", last_dir.to_str().unwrap(), " λ "].join("");
 
-        write!(stdout, "{}", [":", last_dir.to_str().unwrap(), " λ "].join(""));
+        write!(stdout, "{}", output);
 
         stdout.flush();
         buffer.clear();
@@ -84,6 +86,7 @@ fn main() {
                 .unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
             }),
+            "exit" => break,
             "help" => println!("Sorry, you're on your own for now"),
             _ => bin_command(command, arg_one)
             // _ => println!("Rsh: {} <- command not found", command)

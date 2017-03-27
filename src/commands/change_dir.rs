@@ -16,8 +16,10 @@ pub fn change_dir(input: &str) {
             .expect("No home directory found")
     } else {
         match input {
+            "~" => env::set_current_dir(&root).unwrap(),
+            "~/" => env::set_current_dir(&root).unwrap(),
             "." => env::set_current_dir(&c_dir).unwrap(),
-            ".." => env::set_current_dir(prev_dir).unwrap(),
+            ".." => env::set_current_dir(&prev_dir).unwrap(),
             _ => env::set_current_dir(buffer).unwrap()
         }
     }
