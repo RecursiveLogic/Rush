@@ -22,19 +22,6 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
-fn bin_command(cmd: &str, argmnt: &str) {
-    let mut child = Command::new(["/bin/", cmd].join(""))
-        .arg(argmnt)
-        .spawn()
-        .expect("Failed to execute child");
-
-    let ecode = child
-        .wait()
-        .expect("Failed to wait on child");
-
-    assert!(ecode.success());
-}
-
 fn main() {
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
@@ -43,15 +30,19 @@ fn main() {
     let mut buffer = String::new();
     let empty_dir = OsString::new();
 
-    println!("** Rsh **\n");
+    println!("** rush **\n");
 
     loop {
+        let root_dir = env::home_dir().unwrap();
         let curr_dir = env::current_dir().unwrap();
         let last_dir = curr_dir.iter().last().unwrap_or(&empty_dir);
-        let output = ["Rush:", last_dir.to_str().unwrap(), " λ "].join("");
+        let output = if curr_dir == root_dir {
+            ["rush:~ ", "λ "].join("")
+        } else {
+            ["rush:", last_dir.to_str().unwrap(), " λ "].join("")
+        };
 
         write!(stdout, "{}", output);
-
         stdout.flush();
         buffer.clear();
 
@@ -88,8 +79,7 @@ fn main() {
             }),
             "exit" => break,
             "help" => println!("Sorry, you're on your own for now"),
-            _ => bin_command(command, arg_one)
-            // _ => println!("Rsh: {} <- command not found", command)
+            _ => utils::path_dirs::get_path_dirs(command, arg_one)
         }
     }
 }
