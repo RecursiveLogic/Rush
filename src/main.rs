@@ -22,6 +22,7 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
+#[allow(dead_code)]
 fn grab_arguments() {
     let mut arguments = vec![];
     for argument in env::args() {
@@ -64,11 +65,11 @@ fn main() {
             .collect::<Vec<_>>();
 
         let command = &commands[0] as &str;
-        let arg_one = commands.get(1).cloned().unwrap_or("");
+        let argument = commands.get(1).cloned().unwrap_or("");
 
         match command {
             "pwd" => println!("{}", curr_dir.display()),
-            "cd" => commands::change_dir::change_dir(arg_one),
+            "cd" => commands::change_dir::change_dir(argument),
             "touch" => touch(&Path::new(&commands[1] as &str))
                 .unwrap_or_else(|why| {
                 println!("! {:?}", why.kind());
@@ -87,7 +88,7 @@ fn main() {
             }),
             "exit" => break,
             "help" => println!("Sorry, you're on your own for now"),
-            _ => utils::exec_path_binary::exec(command, arg_one)
+            _ => utils::exec_path_binary::find_path_cmd(command, argument)
         }
     }
 }

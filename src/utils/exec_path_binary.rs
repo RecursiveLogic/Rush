@@ -5,16 +5,14 @@ use std::process::Command;
 use std::path::Path;
 use std::ffi::OsString;
 
-fn bin_command(bin_path: &str, argument: &str) {
-    let mut child = Command::new(bin_path)
-        .arg(argument)
-        .spawn()
-        .expect("Failed to execute child");
+fn exec_process(bin_path: &str, argument: &str) {
+    let mut builder = Command::new(bin_path);
 
-    let ecode = child
-        .wait()
-        .expect("Failed to wait on child");
-    // assert!(ecode.success())
+    if !argument.is_empty() {
+        builder.arg(argument);
+    }
+
+    builder.spawn().expect("Failed to execute process");
 }
 
 fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
@@ -25,7 +23,7 @@ fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
             let path = entry.path();
             let bin = path.iter().last().unwrap_or(&empty_dir);
             if bin == cmd {
-                bin_command(path.to_str().unwrap(), argument);
+                exec_process(path.to_str().unwrap(), argument);
                 return Ok(());
             }
         }
@@ -33,7 +31,7 @@ fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn exec(cmd: &str, argument: &str) {
+pub fn find_path_cmd(cmd: &str, argument: &str) {
     let key = "PATH";
 
     match env::var_os(key) {
