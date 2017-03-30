@@ -22,6 +22,14 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
+fn grab_arguments() {
+    let mut arguments = vec![];
+    for argument in env::args() {
+        arguments.push(argument);
+    }
+    arguments.sort()
+}
+
 fn main() {
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
