@@ -11,9 +11,9 @@ fn bin_command(bin_path: &str, argument: &str) {
         .spawn()
         .expect("Failed to execute child");
 
-    // let ecode = child
-    //     .wait()
-    //     .expect("Failed to wait on child");
+    let ecode = child
+        .wait()
+        .expect("Failed to wait on child");
     // assert!(ecode.success())
 }
 
@@ -33,11 +33,15 @@ fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub fn get_path_dirs(cmd: &str, argument: &str) {
+pub fn exec(cmd: &str, argument: &str) {
     let key = "PATH";
+
     match env::var_os(key) {
         Some(paths) => {
-            for path in env::split_paths(&paths) {
+            let mut directories = env::split_paths(&paths).collect::<Vec<_>>();
+                directories.sort();
+                directories.dedup();
+            for path in directories.iter() {
                 visit_dir(&path, &cmd, &argument);
             }
         },

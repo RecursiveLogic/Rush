@@ -87,7 +87,7 @@ fn main() {
             }),
             "exit" => break,
             "help" => println!("Sorry, you're on your own for now"),
-            _ => utils::path_dirs::get_path_dirs(command, arg_one)
+            _ => utils::exec_path_binary::exec(command, arg_one)
         }
     }
 }
