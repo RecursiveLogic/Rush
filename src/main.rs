@@ -1,5 +1,7 @@
 #![allow(unused_must_use)]
 #![allow(unused_imports)]
+extern crate nix;
+
 mod commands;
 mod utils;
 
@@ -45,6 +47,7 @@ fn main() {
         let root_dir = env::home_dir().unwrap();
         let curr_dir = env::current_dir().unwrap();
         let last_dir = curr_dir.iter().last().unwrap_or(&empty_dir);
+
         let output = if curr_dir == root_dir {
             ["rush:~ ", "λ "].join("")
         } else {
@@ -88,7 +91,7 @@ fn main() {
             }),
             "exit" => break,
             "help" => println!("Sorry, you're on your own for now"),
-            _ => utils::exec_path_binary::find_path_cmd(command, argument)
+            _ => utils::binary_exec::find_path_cmd(command, argument)
         }
     }
 }

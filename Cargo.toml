@@ -1,6 +1,7 @@
 [package]
+authors = ["http://radiux.io/"]
 name = "rush"
 version = "0.1.0"
-authors = ["http://radiux.io/"]
 
 [dependencies]
+nix = "0.8.0"

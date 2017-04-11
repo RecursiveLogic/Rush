@@ -5,6 +5,8 @@ use std::process::Command;
 use std::path::Path;
 use std::ffi::OsString;
 
+use nix::unistd::{fork, ForkResult};
+
 fn exec_process(bin_path: &str, argument: &str) {
     let mut builder = Command::new(bin_path);
 
@@ -12,7 +14,19 @@ fn exec_process(bin_path: &str, argument: &str) {
         builder.arg(argument);
     }
 
-    builder.spawn().expect("Failed to execute process");
+    if let Ok(mut builder) = builder.spawn() {
+        match fork() {
+            Ok(ForkResult::Parent { child, .. }) => {
+                builder
+                    .expect("Command wasn't running");
+                println!("New child PID: {}", child);
+            },
+            Ok(ForkResult::Child) => println!("I'm a new child process"),
+            Err(e) => println!("Fork failed: {}", e)
+        }
+    } else {
+        println!("Failed to execute process");
+    }
 }
 
 fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
@@ -22,6 +36,7 @@ fn visit_dir(dir: &Path, cmd: &str, argument: &str) -> io::Result<()> {
             let entry = entry?;
             let path = entry.path();
             let bin = path.iter().last().unwrap_or(&empty_dir);
+
             if bin == cmd {
                 exec_process(path.to_str().unwrap(), argument);
                 return Ok(());
