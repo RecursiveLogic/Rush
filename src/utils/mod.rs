@@ -1,1 +1,1 @@
-pub mod binary_exec;
+pub mod bin_exec;

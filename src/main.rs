@@ -5,6 +5,7 @@ extern crate nix;
 mod commands;
 mod utils;
 
+use std::{thread, time};
 use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
@@ -69,29 +70,45 @@ fn main() {
 
         let command = &commands[0] as &str;
         let argument = commands.get(1).cloned().unwrap_or("");
+        let argument2 = commands.get(2).cloned().unwrap_or("");
+        let input = commands.get(3).cloned().unwrap_or("");
 
-        match command {
-            "pwd" => println!("{}", curr_dir.display()),
-            "cd" => commands::change_dir::change_dir(argument),
-            "touch" => touch(&Path::new(&commands[1] as &str))
-                .unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            }),
-            "rm" => fs::remove_file(&commands[1] as &str)
-                .unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            }),
-            "mkdir" => fs::create_dir(&commands[1] as &str)
-                .unwrap_or_else(|why| {
-                println!("! {:?}", why.kind())
-            }),
-            "rmdir" => fs::remove_dir(&commands[1] as &str)
-                .unwrap_or_else(|why| {
-                println!("! {:?}", why.kind());
-            }),
-            "exit" => break,
-            "help" => println!("Sorry, you're on your own for now"),
-            _ => utils::binary_exec::find_path_cmd(command, argument)
+        if argument == ">" {
+            utils::bin_exec::find_path_cmd(command, "", argument2);
+        } else if argument2 == ">" {
+            utils::bin_exec::find_path_cmd(command, argument, input);
+        } else {
+            match command {
+                "pwd" => println!("{}", curr_dir.display()),
+                "cd" => commands::change_dir::change_dir(argument),
+                "touch" => touch(&Path::new(argument))
+                    .unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind());
+                }),
+                "rm" => fs::remove_file(argument)
+                    .unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind());
+                }),
+                "mkdir" => fs::create_dir(argument)
+                    .unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind())
+                }),
+                "rmdir" => fs::remove_dir(argument)
+                    .unwrap_or_else(|why| {
+                    println!("! {:?}", why.kind());
+                }),
+                "sleep" => {
+                    let input_time = argument.parse::<u64>().unwrap();
+                    let sleep_time = time::Duration::from_millis(input_time * 1000);
+                    let now = time::Instant::now();
+
+                    thread::sleep(sleep_time);
+                    println!("Sleep {:?}", now.elapsed());
+                },
+                "exit" => break,
+                "help" => println!("Sorry, you're on your own for now"),
+                _ => utils::bin_exec::find_path_cmd(command, argument, "")
+            }
         }
     }
 }
