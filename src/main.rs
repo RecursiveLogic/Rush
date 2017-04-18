@@ -2,18 +2,116 @@
 #![allow(unused_imports)]
 extern crate nix;
 
-mod commands;
-mod utils;
-
 use std::{thread, time};
 use std::fs::{self, File, OpenOptions};
-use std::io;
+use std::io::{self, Write};
 use std::io::prelude::*;
 use std::os::unix;
-use std::path::Path;
+use std::path::{self, Path};
 use std::env;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::ffi::OsString;
+
+use nix::unistd::{fork, ForkResult};
+
+fn history(cmd: &str) -> io::Result<()> {
+    let root = env::home_dir().unwrap();
+    let bash_history = [root.to_str().unwrap(), "/.bash_history"].join("");
+    // let mut f = File::open(bash_history)?;
+    let mut f = OpenOptions::new().append(true).open(bash_history)?;
+    let mut buffer = String::new();
+
+    f.read_to_string(&mut buffer)?;
+    let mut commands = buffer.split("\n").collect::<Vec<_>>();
+            commands.push(cmd);
+    let output = commands.join("\n");
+
+    f.write_all(output.as_bytes())?;
+    Ok(())
+}
+
+fn change_dir(input: &str) {
+    let root = env::home_dir().unwrap();
+    let c_dir = env::current_dir().unwrap();
+    let mut prev_dirs = c_dir.clone();
+            prev_dirs.pop();
+    let prev_dir = prev_dirs.join("");
+    let path = Path::new(input);
+
+    if input.is_empty() {
+        env::set_current_dir(root)
+            .expect("No home directory found")
+    } else if !path.is_dir() {
+        println!("-rush: cd: {}: No such directory", input);
+    } else {
+        match input {
+            "~" | "~/" => env::set_current_dir(&root).unwrap(),
+            "." => env::set_current_dir(&c_dir).unwrap(),
+            ".." => env::set_current_dir(&prev_dir).unwrap(),
+            _ => env::set_current_dir(path).unwrap()
+        }
+    }
+}
+
+fn exec_cmd(bin_path: &str, argument: &str, input: &str) {
+    let mut builder = Command::new(bin_path);
+
+    if !argument.is_empty() {
+        builder.arg(argument);
+    }
+
+    if !input.is_empty() {
+        let mut child = builder
+            .output()
+            .unwrap_or_else(|e| {
+                panic!("Failed to execute process: {}", e);
+            });
+
+        if child.status.success() {
+            let s = String::from_utf8_lossy(&child.stdout);
+            let mut f = File::create(&Path::new(&input)).unwrap();
+            f.write_all(s.as_bytes());
+        }
+    } else {
+        let mut child = builder
+            .stdout(Stdio::inherit())
+            .spawn()
+            .expect("Command didn't execute successfully");
+    }
+}
+
+fn visit_dir(dir: &Path, cmd: &str, argument: &str, input: &str) -> io::Result<()> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let empty_dir = OsString::new();
+            let entry = entry?;
+            let path = entry.path();
+            let bin = path.iter().last().unwrap_or(&empty_dir);
+
+            if bin == cmd {
+                exec_cmd(path.to_str().unwrap(), argument, input);
+                return Ok(());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn find_path_cmd(cmd: &str, argument: &str, input: &str) {
+    let key = "PATH";
+
+    match env::var_os(key) {
+        Some(paths) => {
+            let mut directories = env::split_paths(&paths).collect::<Vec<_>>();
+                    directories.sort();
+                    directories.dedup();
+            for path in directories.iter() {
+                visit_dir(&path, &cmd, &argument, &input);
+            }
+        },
+        None => println!("{} is not defined in the environment", key)
+    }
+}
 
 fn touch(path: &Path) -> io::Result<()> {
     match OpenOptions::new()
@@ -74,13 +172,13 @@ fn main() {
         let input = commands.get(3).cloned().unwrap_or("");
 
         if argument == ">" {
-            utils::bin_exec::find_path_cmd(command, "", argument2);
+            find_path_cmd(command, "", argument2);
         } else if argument2 == ">" {
-            utils::bin_exec::find_path_cmd(command, argument, input);
+            find_path_cmd(command, argument, input);
         } else {
             match command {
                 "pwd" => println!("{}", curr_dir.display()),
-                "cd" => commands::change_dir::change_dir(argument),
+                "cd" => change_dir(argument),
                 "touch" => touch(&Path::new(argument))
                     .unwrap_or_else(|why| {
                     println!("! {:?}", why.kind());
@@ -107,7 +205,7 @@ fn main() {
                 },
                 "exit" => break,
                 "help" => println!("Sorry, you're on your own for now"),
-                _ => utils::bin_exec::find_path_cmd(command, argument, "")
+                _ => find_path_cmd(command, argument, "")
             }
         }
     }
