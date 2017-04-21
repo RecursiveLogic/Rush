@@ -19,14 +19,14 @@ fn history(cmd: &str) -> io::Result<()> {
     let bash_history = [root.to_str().unwrap(), "/.bash_history"].join("");
     // let mut f = File::open(bash_history)?;
     let mut f = OpenOptions::new().append(true).open(bash_history)?;
-    let mut buffer = String::new();
+    // let mut buffer = String::new();
+    //
+    // f.read_to_string(&mut buffer)?;
+    // let mut commands = buffer.split("\n").collect::<Vec<_>>();
+    //     commands.push(cmd);
+    // let output = commands.join("\n");
 
-    f.read_to_string(&mut buffer)?;
-    let mut commands = buffer.split("\n").collect::<Vec<_>>();
-            commands.push(cmd);
-    let output = commands.join("\n");
-
-    f.write_all(output.as_bytes())?;
+    f.write_all([cmd, "\n"].join("").as_bytes())?;
     Ok(())
 }
 
@@ -61,7 +61,7 @@ fn exec_cmd(bin_path: &str, argument: &str, input: &str) {
     }
 
     if !input.is_empty() {
-        let mut child = builder
+        let child = builder
             .output()
             .unwrap_or_else(|e| {
                 panic!("Failed to execute process: {}", e);
@@ -77,6 +77,12 @@ fn exec_cmd(bin_path: &str, argument: &str, input: &str) {
             .stdout(Stdio::inherit())
             .spawn()
             .expect("Command didn't execute successfully");
+
+        let ecode = child.wait().unwrap_or_else(|e| {
+            panic!("Failed to wait on child: {}", e);
+        });
+
+        assert!(ecode.success());
     }
 }
 
@@ -123,15 +129,6 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
-#[allow(dead_code)]
-fn grab_arguments() {
-    let mut arguments = vec![];
-    for argument in env::args() {
-        arguments.push(argument);
-    }
-    arguments.sort()
-}
-
 fn main() {
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
@@ -171,6 +168,8 @@ fn main() {
         let argument2 = commands.get(2).cloned().unwrap_or("");
         let input = commands.get(3).cloned().unwrap_or("");
 
+        history(&command);
+
         if argument == ">" {
             find_path_cmd(command, "", argument2);
         } else if argument2 == ">" {
@@ -203,8 +202,8 @@ fn main() {
                     thread::sleep(sleep_time);
                     println!("Sleep {:?}", now.elapsed());
                 },
-                "exit" => break,
                 "help" => println!("Sorry, you're on your own for now"),
+                "exit" => break,
                 _ => find_path_cmd(command, argument, "")
             }
         }
