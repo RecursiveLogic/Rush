@@ -129,6 +129,16 @@ fn touch(path: &Path) -> io::Result<()> {
     }
 }
 
+#[test]
+fn return_home_if_empty() {
+    let path = Path::new("/usr/");
+    let prev_dir = env::set_current_dir(path);
+    change_dir("");
+    let root = env::home_dir().unwrap();
+    let c_dir = env::current_dir().unwrap();
+    assert_eq!(root, c_dir);
+}
+
 fn main() {
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
