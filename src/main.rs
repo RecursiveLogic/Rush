@@ -1,6 +1,7 @@
 #![allow(unused_must_use)]
 #![allow(unused_imports)]
 extern crate nix;
+extern crate regex;
 
 use std::{thread, time};
 use std::fs::{self, File, OpenOptions};
@@ -130,7 +131,7 @@ fn touch(path: &Path) -> io::Result<()> {
 }
 
 #[test]
-fn return_home_if_empty() {
+fn return_home_if_empty_arg() {
     let path = Path::new("/usr/");
     let prev_dir = env::set_current_dir(path);
     change_dir("");
@@ -155,7 +156,7 @@ fn main() {
         let last_dir = curr_dir.iter().last().unwrap_or(&empty_dir);
 
         let output = if curr_dir == root_dir {
-            ["rush:~ ", "λ "].join("")
+            "rush:~ λ ".to_string()
         } else {
             ["rush:", last_dir.to_str().unwrap(), " λ "].join("")
         };

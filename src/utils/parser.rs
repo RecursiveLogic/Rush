@@ -1,5 +1,7 @@
 use std::io;
 
+use regex::Regex;
+
 fn grab_tokens(input: &str) {
     match input {
         ">" => println!("Overwrite Redirect IO"),
