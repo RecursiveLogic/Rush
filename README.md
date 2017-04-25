@@ -17,7 +17,7 @@ Rush is a command line shell written in Rust.
 
 ## In Progress
 
-- [ ] Recursive descent parser for scripting language
+- [ ] Recursive descent parser
 - [ ] I/O redirection
 - [ ] Store command history
 
