@@ -2,21 +2,14 @@ use std::io;
 
 use regex::Regex;
 
-fn grab_tokens(input: &str) {
-    match input {
-        ">" => println!("Overwrite Redirect IO"),
-        ">>" => println!("Append Redirect IO"),
-        ">&" => println!("Overwrite Redirect IO || STDERR"),
-        ">>&" => println!("Append Redirect IO || STDERR"),
-        "|" => println!("Pipe STDOUT"),
-        "|&" => println!("Pipe STDOUT || STDERR"),
-        "&" => println!("Fork process"),
-        "&&" => println!("And"),
-        "||" => println!("Or"),
-        ";" => println!("Terminate"),
-        "$$" => println!("Print PID of executed process"),
-        _ => println!("No match")
-    }
+fn grab_tokens(input: &str) -> io::Result<()> {
+    let tokens = Regex::new(r"[|&<>;$]+").unwrap();
+    let matches: Vec<&str> = tokens
+        .find_iter(input)
+        .map(|x| x.as_str())
+        .collect();
+
+    Ok(matches)
 }
 
 fn parse_line(input: &str) {

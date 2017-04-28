@@ -140,7 +140,7 @@ fn touch(path: &Path) -> io::Result<()> {
 fn return_home_if_empty_arg() {
     let path = Path::new("/usr/");
     let prev_dir = env::set_current_dir(path);
-    change_dir("");
+    Shell.change_dir("");
     let root = env::home_dir().unwrap();
     let c_dir = env::current_dir().unwrap();
     assert_eq!(root, c_dir);
