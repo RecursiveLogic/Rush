@@ -5,7 +5,7 @@ extern crate regex;
 
 use std::{thread, time};
 use std::fs::{self, File, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, BufReader, Write};
 use std::io::prelude::*;
 use std::os::unix;
 use std::path::{self, Path};
@@ -15,42 +15,48 @@ use std::ffi::OsString;
 
 use nix::unistd::{fork, ForkResult};
 
-fn history(cmd: &str) -> io::Result<()> {
-    let root = env::home_dir().unwrap();
-    let bash_history = [root.to_str().unwrap(), "/.bash_history"].join("");
-    // let mut f = File::open(bash_history)?;
-    let mut f = OpenOptions::new().append(true).open(bash_history)?;
-    // let mut buffer = String::new();
-    //
-    // f.read_to_string(&mut buffer)?;
-    // let mut commands = buffer.split("\n").collect::<Vec<_>>();
-    //     commands.push(cmd);
-    // let output = commands.join("\n");
+struct Shell;
 
-    f.write_all([cmd, "\n"].join("").as_bytes())?;
-    Ok(())
-}
+impl Shell {
+    fn change_dir(&self, input: &str) {
+        let root = env::home_dir().unwrap();
+        let c_dir = env::current_dir().unwrap();
+        let mut prev_dirs = c_dir.clone();
+                prev_dirs.pop();
+        let prev_dir = prev_dirs.join("");
+        let path = Path::new(input);
 
-fn change_dir(input: &str) {
-    let root = env::home_dir().unwrap();
-    let c_dir = env::current_dir().unwrap();
-    let mut prev_dirs = c_dir.clone();
-            prev_dirs.pop();
-    let prev_dir = prev_dirs.join("");
-    let path = Path::new(input);
-
-    if input.is_empty() {
-        env::set_current_dir(root)
-            .expect("No home directory found")
-    } else if !path.is_dir() {
-        println!("-rush: cd: {}: No such directory", input);
-    } else {
-        match input {
-            "~" | "~/" => env::set_current_dir(&root).unwrap(),
-            "." => env::set_current_dir(&c_dir).unwrap(),
-            ".." => env::set_current_dir(&prev_dir).unwrap(),
-            _ => env::set_current_dir(path).unwrap()
+        if input.is_empty() {
+            env::set_current_dir(root)
+                .expect("No home directory found")
+        } else if !path.is_dir() {
+            println!("-rush: cd: {}: No such directory", input);
+        } else {
+            match input {
+                "~" | "~/" => env::set_current_dir(&root).unwrap(),
+                "." => env::set_current_dir(&c_dir).unwrap(),
+                ".." => env::set_current_dir(&prev_dir).unwrap(),
+                _ => env::set_current_dir(path).unwrap()
+            }
         }
+    }
+    fn save_history(&self, cmd: &str) -> io::Result<()> {
+        let root = env::home_dir().unwrap();
+        let bash_history = [root.to_str().unwrap(), "/.bash_history"].join("");
+        let mut f = OpenOptions::new().append(true).open(bash_history)?;
+
+        f.write_all([cmd, "\n"].join("").as_bytes())?;
+        Ok(())
+    }
+    fn get_history(&self) {
+        let root = env::home_dir().unwrap();
+        let bash_history = [root.to_str().unwrap(), "/.bash_history"].join("");
+        let mut f = File::open(bash_history).unwrap();
+        let mut content = String::new();
+
+        f.read_to_string(&mut content);
+
+        print!("{}", content);
     }
 }
 
@@ -179,7 +185,7 @@ fn main() {
         let argument2 = commands.get(2).cloned().unwrap_or("");
         let input = commands.get(3).cloned().unwrap_or("");
 
-        history(&command);
+        Shell.save_history(&command);
 
         if argument == ">" {
             find_path_cmd(command, "", argument2);
@@ -188,7 +194,7 @@ fn main() {
         } else {
             match command {
                 "pwd" => println!("{}", curr_dir.display()),
-                "cd" => change_dir(argument),
+                "cd" => Shell.change_dir(argument),
                 "touch" => touch(&Path::new(argument))
                     .unwrap_or_else(|why| {
                     println!("! {:?}", why.kind());
@@ -205,6 +211,7 @@ fn main() {
                     .unwrap_or_else(|why| {
                     println!("! {:?}", why.kind());
                 }),
+                "history" => Shell.get_history(),
                 "sleep" => {
                     let input_time = argument.parse::<u64>().unwrap();
                     let sleep_time = time::Duration::from_millis(input_time * 1000);

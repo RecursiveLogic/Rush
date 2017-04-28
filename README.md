@@ -14,6 +14,7 @@ Rush is a command line shell written in Rust.
 - [x] Execution of `$PATH` commands
 - [x] Directory navigation
 - [x] Shell sleep
+- [x] Read command history
 
 ## In Progress
 
@@ -23,6 +24,7 @@ Rush is a command line shell written in Rust.
 
 ## Road Map
 
+- [ ] Signaling
 - [ ] Run commands in background through `&` and `wait`
 - [ ] Execute programs
 - [ ] Autocomplete
