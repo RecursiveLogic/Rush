@@ -2,18 +2,16 @@ use std::io;
 
 use regex::Regex;
 
-fn grab_tokens(input: &str) -> io::Result<()> {
-    let tokens = Regex::new(r"[|&<>;$]+").unwrap();
-    let matches: Vec<&str> = tokens
-        .find_iter(input)
-        .map(|x| x.as_str())
-        .collect();
+struct Parser;
 
-    Ok(matches)
-}
+impl Parser {
+    fn grab_tokens(&self, input: &str) -> Vec<&str> {
+        let tokens = Regex::new(r"[|&<>;$]+").unwrap();
+        let matches: Vec<&str> = tokens
+            .find_iter(input)
+            .map(|x| x.as_str())
+            .collect();
 
-fn parse_line(input: &str) {
-    let commands = input.split("|");
-    let command = commands[0];
-    let arguments = command.split_whitespace();
+        matches
+    }
 }
