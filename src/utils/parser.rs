@@ -5,7 +5,7 @@ use regex::Regex;
 
 struct Parser;
 
-impl Parser {
+pub impl Parser {
     fn parse(&self, tokens: Vec<Token>, rule_count: i32) -> Result<Grammar, usize> {
         let mut grammar_object = Grammar { rules: vec![], main: 0 };
         let mut insert_order = vec![];
